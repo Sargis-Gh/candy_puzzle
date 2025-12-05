@@ -21,7 +21,7 @@ class CandyPuzzleApp extends StatelessWidget {
         BlocProvider(create: (_) => LevelCubit()),
       ],
       child: MaterialApp.router(
-        title: 'Candy Puzzle',
+        title: 'Candy-Puzzle',
         theme: AppTheme.lightTheme,
         routerConfig: AppRouter.router,
         debugShowCheckedModeBanner: false,

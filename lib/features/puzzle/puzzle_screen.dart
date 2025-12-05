@@ -344,6 +344,7 @@ class _ExitWidget extends StatelessWidget {
                             Navigator.of(context).pop();
                             context.pop();
                             context.pop();
+                            context.pop();
                           },
                           child: Image.asset(
                             AppAssets.yes,
