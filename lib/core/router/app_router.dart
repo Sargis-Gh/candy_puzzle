@@ -4,7 +4,6 @@ import '../../features/username/username_screen.dart';
 import '../../features/menu/menu_screen.dart';
 import '../../features/level_select/level_select_screen.dart';
 import '../../features/puzzle/puzzle_screen.dart';
-import '../../features/win/win_screen.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -27,7 +26,6 @@ class AppRouter {
           return PuzzleScreen(levelId: id);
         },
       ),
-      GoRoute(path: '/win', builder: (context, state) => const WinScreen()),
     ],
   );
 }

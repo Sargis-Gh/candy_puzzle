@@ -51,4 +51,19 @@ class AppAssets {
   static const String puzzle4 = 'assets/images/puzzles/puzzle_4.png';
   static const String puzzle5 = 'assets/images/puzzles/puzzle_5.png';
   static const String puzzle6 = 'assets/images/puzzles/puzzle_6.png';
+
+  static const String winBackground = 'assets/images/win/win_background.png';
+  static const String winHeader = 'assets/images/win/win_header.png';
+  static const String loseHeader = 'assets/images/win/lose_header.png';
+  static const String yourTime = 'assets/images/win/your_time.png';
+  static const String bestTime = 'assets/images/win/best_time.png';
+  static const String star = 'assets/images/win/star.png';
+  static const String starBg = 'assets/images/win/star_bg.png';
+  static const String restart = 'assets/images/win/restart.png';
+  static const String home = 'assets/images/win/home.png';
+  static const String next = 'assets/images/win/next.png';
+  static const String yes = 'assets/images/win/yes.png';
+  static const String no = 'assets/images/win/no.png';
+  static const String inactiveNext = 'assets/images/win/inactive_next.png';
+  static const String maybeTryAgain = 'assets/images/win/maybe_try_again.png';
 }

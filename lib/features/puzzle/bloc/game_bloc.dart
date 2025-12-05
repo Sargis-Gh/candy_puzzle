@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:candy_puzzle/features/puzzle/data/level_configs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/puzzle_piece.dart';
 import 'game_event.dart';
 import 'game_state.dart';
@@ -21,21 +22,26 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     on<GameExited>(_onGameExited);
   }
 
-  void _onGameStarted(GameStarted event, Emitter<GameState> emit) {
+  void _onGameStarted(GameStarted event, Emitter<GameState> emit) async {
     _timer?.cancel();
-    // Initialize pieces for the level
-    // For now, we'll generate some dummy pieces if we don't have the asset logic yet
-    // But ideally we should load from a repository or helper
 
     final pieces = _generatePiecesForLevel(event.levelId, event.gameAreaSize);
+
+    // Load best time for this level
+    final prefs = await SharedPreferences.getInstance();
+    final bestTimeSeconds =
+        prefs.getInt('best_time_level_${event.levelId}') ?? 0;
+    final bestTime = Duration(seconds: bestTimeSeconds);
 
     emit(
       state.copyWith(
         status: GameStatus.playing,
         pieces: pieces,
-        timeElapsed: 0,
+        timeElapsed: Duration.zero,
         levelId: event.levelId,
         gameAreaSize: event.gameAreaSize,
+        bestTime: bestTime,
+        stars: 0,
       ),
     );
 
@@ -62,7 +68,7 @@ class GameBloc extends Bloc<GameEvent, GameState> {
     emit(state.copyWith(pieces: updatedPieces));
   }
 
-  void _onPieceDropped(PieceDropped event, Emitter<GameState> emit) {
+  void _onPieceDropped(PieceDropped event, Emitter<GameState> emit) async {
     if (state.status != GameStatus.playing) return;
 
     final pieceIndex = state.pieces.indexWhere((p) => p.id == event.pieceId);
@@ -90,9 +96,48 @@ class GameBloc extends Bloc<GameEvent, GameState> {
       // Check win condition
       if (updatedPieces.every((p) => p.isPlaced)) {
         _timer?.cancel();
-        emit(state.copyWith(status: GameStatus.completed));
+        await _handleGameCompleted(emit);
       }
     }
+  }
+
+  Future<void> _handleGameCompleted(Emitter<GameState> emit) async {
+    // Calculate stars based on time elapsed
+    // 3 stars: < 1/3 of total time
+    // 2 stars: < 2/3 of total time
+    // 1 star: completed within total time
+    final timeElapsed = state.timeElapsed;
+    final totalTime = state.totalTime;
+
+    int stars = 1;
+    if (timeElapsed <= totalTime * (1 / 3)) {
+      stars = 3;
+    } else if (timeElapsed <= totalTime * (2 / 3)) {
+      stars = 2;
+    }
+
+    // Save best time if this is a new record
+    final prefs = await SharedPreferences.getInstance();
+    final currentBestSeconds =
+        prefs.getInt('best_time_level_${state.levelId}') ?? 0;
+    final currentBest = Duration(seconds: currentBestSeconds);
+
+    Duration newBestTime = state.bestTime;
+    if (currentBest == Duration.zero || timeElapsed < currentBest) {
+      await prefs.setInt(
+        'best_time_level_${state.levelId}',
+        timeElapsed.inSeconds,
+      );
+      newBestTime = timeElapsed;
+    }
+
+    emit(
+      state.copyWith(
+        status: GameStatus.completed,
+        stars: stars,
+        bestTime: newBestTime,
+      ),
+    );
   }
 
   void _onTimerTicked(TimerTicked event, Emitter<GameState> emit) {
@@ -120,7 +165,11 @@ class GameBloc extends Bloc<GameEvent, GameState> {
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      add(TimerTicked(timeElapsed: state.timeElapsed + 1));
+      add(
+        TimerTicked(
+          timeElapsed: state.timeElapsed + const Duration(seconds: 1),
+        ),
+      );
     });
   }
 

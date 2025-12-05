@@ -65,6 +65,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/images/win/
     - assets/images/puzzles/
     - assets/images/puzzles/level_1/
     - assets/images/puzzles/level_2/

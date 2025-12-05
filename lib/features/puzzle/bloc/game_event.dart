@@ -38,7 +38,7 @@ class PieceDropped extends GameEvent {
 }
 
 class TimerTicked extends GameEvent {
-  final int timeElapsed;
+  final Duration timeElapsed;
 
   const TimerTicked({required this.timeElapsed});
 

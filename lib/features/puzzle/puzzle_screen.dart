@@ -1,7 +1,10 @@
+import 'dart:ui';
+
 import 'package:candy_puzzle/core/theme/app_assets.dart';
 import 'package:candy_puzzle/core/theme/app_colors.dart';
 import 'package:candy_puzzle/core/widgets/game_background.dart';
 import 'package:candy_puzzle/features/puzzle/data/level_configs.dart';
+import 'package:candy_puzzle/features/win/win_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -45,96 +48,135 @@ class _PuzzleViewState extends State<_PuzzleView> {
     });
   }
 
+  void _showWinDialog(GameState state, GameBloc bloc) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useSafeArea: false,
+      barrierColor: const Color.fromRGBO(153, 54, 169, 0.72),
+      builder: (context) => WinWidget(
+        isCompleted: state.status == GameStatus.completed,
+        stars: state.stars,
+        yourTime: state.timeElapsed,
+        bestTime: state.bestTime,
+        onRestart: () {
+          Navigator.of(context).pop();
+          final size = MediaQuery.of(context).size.width - 28;
+          bloc.add(
+            GameStarted(
+              levelId: widget.levelId,
+              gameAreaSize: Size(size, size),
+            ),
+          );
+        },
+        onHome: () {
+          _showExitDialog(state);
+        },
+        onNext: () {
+          Navigator.of(context).pop();
+          context.pop();
+        },
+      ),
+    );
+  }
+
+  void _showExitDialog(GameState state) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useSafeArea: false,
+      barrierColor: const Color.fromRGBO(153, 54, 169, 0.72),
+      builder: (context) => _ExitWidget(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: GameBackground(
-        child: SafeArea(
-          child: BlocConsumer<GameBloc, GameState>(
-            listener: (context, state) {
-              if (state.status == GameStatus.completed) {
-                context.go('/win');
-              } else if (state.status == GameStatus.failed) {
-                // Handle fail
-              }
-            },
-            builder: (context, state) {
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => context.pop(),
-                          child: Image.asset(
-                            AppAssets.puzzleBack,
-                            width: 53.34,
-                            height: 38.15,
-                          ),
+        child: BlocConsumer<GameBloc, GameState>(
+          listener: (context, state) {
+            if (state.status == GameStatus.completed ||
+                state.status == GameStatus.failed) {
+              _showWinDialog(state, context.read<GameBloc>());
+            }
+          },
+          builder: (context, state) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 14, right: 14, top: 50),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Image.asset(
+                          AppAssets.puzzleBack,
+                          width: 53.34,
+                          height: 38.15,
                         ),
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Stack(
-                            children: [
-                              Image.asset(
-                                AppAssets.timer,
-                                width: 123,
-                                height: 32.81,
-                              ),
-                              Positioned(
-                                right: 16,
-                                bottom: 0.1,
-                                child: Text(
-                                  _formatTime(
-                                    state.totalTime - state.timeElapsed,
-                                  ),
-                                  style: const TextStyle(
-                                    color: AppColors.background,
-                                    fontSize: 25.19,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                      ),
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Stack(
+                          children: [
+                            Image.asset(
+                              AppAssets.timer,
+                              width: 123,
+                              height: 32.81,
+                            ),
+                            Positioned(
+                              right: 16,
+                              bottom: 0.1,
+                              child: Text(
+                                _formatTime(
+                                  state.totalTime - state.timeElapsed,
+                                ),
+                                style: const TextStyle(
+                                  color: AppColors.background,
+                                  fontSize: 25.19,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () {
-                            if (state.status == GameStatus.paused) {
-                              context.read<GameBloc>().add(GameResumed());
-                            } else {
-                              context.read<GameBloc>().add(GamePaused());
-                            }
-                          },
-                          child: Image.asset(
-                            AppAssets.pauseButton,
-                            width: 53.34,
-                            height: 38.15,
-                          ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          if (state.status == GameStatus.paused) {
+                            context.read<GameBloc>().add(GameResumed());
+                          } else {
+                            context.read<GameBloc>().add(GamePaused());
+                          }
+                        },
+                        child: Image.asset(
+                          AppAssets.pauseButton,
+                          width: 53.34,
+                          height: 38.15,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const Spacer(flex: 2),
-                  GameArea(puzzleId: widget.levelId, pieces: state.pieces),
-                  const Spacer(),
-                  CompletedPuzzleExample(puzzleId: widget.levelId),
-                ],
-              );
-            },
-          ),
+                ),
+                const Spacer(flex: 2),
+                GameArea(puzzleId: widget.levelId, pieces: state.pieces),
+                const Spacer(),
+                CompletedPuzzleExample(puzzleId: widget.levelId),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  String _formatTime(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }
 
@@ -253,6 +295,82 @@ class GameArea extends StatelessWidget {
             );
           }).toList(),
         ],
+      ),
+    );
+  }
+}
+
+class _ExitWidget extends StatelessWidget {
+  const _ExitWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 35),
+            child: SizedBox(
+              height: 258,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Align(child: Image.asset(AppAssets.nameBackground)),
+                  Align(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 50),
+                      child: Text(
+                        'Do you really want exit the game?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.background,
+                          fontSize: 35.18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -9,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      children: [
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            context.pop();
+                            context.pop();
+                          },
+                          child: Image.asset(
+                            AppAssets.yes,
+                            width: 111.58,
+                            height: 46.83,
+                          ),
+                        ),
+                        const SizedBox(width: 72.42),
+                        GestureDetector(
+                          onTap: () {
+                            context.pop();
+                          },
+                          child: Image.asset(
+                            AppAssets.no,
+                            width: 111.58,
+                            height: 46.83,
+                          ),
+                        ),
+                        const Spacer(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
